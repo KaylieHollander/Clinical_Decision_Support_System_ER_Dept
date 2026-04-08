@@ -1,0 +1,17 @@
+# Data - never push MIMIC or any patient data
+data/
+*.csv
+*.parquet
+
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
+*.egg-info/
+
+# Docker
+docker/pgdata/
+
+# VSCode
+.vscode/
