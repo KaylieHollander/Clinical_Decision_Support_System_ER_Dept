@@ -1,4 +1,4 @@
-# Data - never push MIMIC or any patient data
+# Data
 data/
 *.csv
 *.parquet
