@@ -1,9 +1,9 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16
     container_name: er_cdss_db
+    env_file:
+      - ../.env
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -12,7 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ../db/schema.sql:/docker-entrypoint-initdb.d/data_schema.sql
+      - ../db/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     restart: unless-stopped
 
 volumes:

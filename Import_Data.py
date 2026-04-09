@@ -12,17 +12,42 @@ conn = psycopg2.connect(
     password = os.getenv("DB_PASSWORD")
 )
 
-df = pd.read_csv("")
+vitals_df = pd.read_csv(r'/Users/kayliehollander/Downloads/vitalsign.csv')
+patient_df = pd.read_csv(r'/Users/kayliehollander/Downloads/edstays.csv')
+triage_df = pd.read_csv(r'/Users/kayliehollander/Downloads/triage.csv')
 
 cursor = conn.cursor()
 
-for _, row in df.iterrows():
+# Merge triage_df with patient_df first in order to allow the "chief complaint" column to be added into the patient table
+patient_df = patient_df.merge(
+    triage_df[['stay_id', 'chiefcomplaint']],
+    on = 'stay_id',
+    how = 'left'
+)
+
+for _, row in patient_df.iterrows():
     cursor.execute("""
-        INSERT INTO er_cdss.vitals 
-            (visit_id, patient_id, temperature, heart_rate, respiratory_rate, o2_sat, systolic_bp, diastolic_bp)
+        INSERT INTO er_cdss.patient (visit_id, patient_id, gender, race, chief_complaint)
+        VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT (visit_id) DO NOTHING
+    """, (row['stay_id'], row['subject_id'], row['gender'], row['race'], row['chiefcomplaint']))
+
+
+for _, row in triage_df.iterrows():
+    cursor.execute("""
+        INSERT INTO er_cdss.triage_vitals (visit_id, temperature, heart_rate, respiratory_rate, o2_sat, systolic_bp, diastolic_bp)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT DO NOTHING
+    """, (row['stay_id'], row['temperature'], row['heartrate'], row['resprate'], row['o2sat'], row['sbp'], row['dbp']))
+
+
+for _, row in vitals_df.iterrows():
+    cursor.execute("""
+        INSERT INTO er_cdss.er_vitals (visit_id, chart_time, temperature, heart_rate, respiratory_rate, o2_sat, systolic_bp, diastolic_bp)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (patient_id) DO NOTHING
-    """, (row['patient_id'], row['temperature'], row['heart_rate'], row['chief_complaint']))
+        ON CONFLICT DO NOTHING
+    """, (row['stay_id'], row['charttime'], row['temperature'], row['heartrate'], row['resprate'], row['o2sat'], row['sbp'], row['dbp']))
+
 
 conn.commit()
 cursor.close()
